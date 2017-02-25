@@ -77,4 +77,4 @@ function getConfiguration(context) {
     return config;
 }
 
-module.export = fromExpress(app);
+module.exports = fromExpress(app);
