@@ -66,7 +66,7 @@ function getConfiguration(context) {
     var config = {  };
 
     _.forEach(keys, key => {
-        var value = ctx.data[key];
+        var value = context.data[key];
         if (!value) throw Boom.preconditionFailed(`Missing config value ${key}`);
         config[key] = value;
     });
