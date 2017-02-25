@@ -14,7 +14,7 @@ const app = express();
 app.use(bodyParser.json());
 
 app.post('/new_url', (req, res, next) => {
-    const ctx = req.webTaskContext;
+    const ctx = req.webtaskContext;
     const config = getConfiguration(ctx);
     const noteText = ctx.body.noteText;
 
@@ -45,7 +45,7 @@ app.post('/new_url', (req, res, next) => {
 })
 
 app.get('/', (req, res, next) => {
-    const ctx = req.webTaskContext;
+    const ctx = req.webtaskContext;
     const config = getConfiguration(ctx);
 
 });
