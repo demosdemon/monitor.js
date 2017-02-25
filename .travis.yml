@@ -10,6 +10,6 @@ install:
 script: true
 deploy:
 - provider: script
-  script: deploy.py
+  script: python deploy.py
   on:
     branch: master
