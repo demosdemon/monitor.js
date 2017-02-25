@@ -72,7 +72,7 @@ function getConfiguration(context) {
     });
 
     config.ifttt_url = `${IFTTT_API_BASE}/trigger/${config.IFTTT_MAKER_TRIGGER}/with/key/${config.IFTTT_MAKER_KEY}`;
-    config.urlshortner = google.urlshortner({ version: 'v1', auth: config.GOOGLE_API_KEY });
+    config.urlshortner = google.urlshortener({ version: 'v1', auth: config.GOOGLE_API_KEY });
 
     return config;
 }
