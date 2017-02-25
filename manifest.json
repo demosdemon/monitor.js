@@ -1,0 +1,7 @@
+[
+  {
+    "filename": "ifttt.js",
+    "name": "monitor",
+    "schedule": "30 * * * *"
+  }
+]

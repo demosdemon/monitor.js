@@ -1,0 +1,13 @@
+language: python
+python:
+- '3.3'
+before_install:
+- openssl aes-256-cbc -K $encrypted_28823d53cd68_key -iv $encrypted_28823d53cd68_iv
+  -in secrets.enc -out secrets -d
+install: pip install -U six requests simplejson jwt
+script: true
+deploy:
+- provider: script
+  script: deploy.py
+  on:
+    branch: master
