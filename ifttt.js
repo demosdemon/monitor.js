@@ -51,7 +51,7 @@ app.get('/', (req, res, next) => {
     ctx.storage.get((err, data) => {
         if (err) return next(err);
 
-        const { urls } from data;
+        const { urls } = data;
         if (!urls)
             res.status(200).send({});
 
