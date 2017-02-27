@@ -7,6 +7,13 @@ from six.moves.urllib_parse import urlparse
 
 try:
     import ConfigParser as configparser
+
+    def __get_section(self, section):
+        if not self.has_section(section):
+            raise KeyError(section)
+        return {key: self.get(section, key) for key in self.options(section)}
+
+    configparser.ConfigParser.__getitem__ = __get_section
 except ImportError:
     import configparser
 
