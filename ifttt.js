@@ -55,7 +55,7 @@ app.post('/', (req, res, next) => {
         if (!urls)
             res.status(200).send({});
 
-        Promise.all(_.forEach(urls, (url, key) => {
+        Promise.all(_.map(urls, (url, key) => {
             return new Promise((resolve, reject) => {
                 fetchAnalytics(config, key, url, (err, clickCount) => {
                     if (err) return reject(err);
@@ -64,17 +64,21 @@ app.post('/', (req, res, next) => {
                     if (clickCount > 0) {
                         iftttNote(config, key, url, clickCount, err => {
                             if (err) reject(err);
+                            console.log(obj);
                             resolve(obj);
                         });
                     } else resolve();
                 });
             });
         })).then(clicks => {
+            console.log(clicks);
             res.status(200).send(_.reduce(clicks, (acc, item) => {
                 if (item)
                     acc[item.key] = item;
-            }));
+                return acc;
+            }, {}));
         }).catch(reason => {
+            console.log(reason);
             res.status(500).send(reason);
         });
     });
