@@ -44,7 +44,7 @@ app.post('/new_url', (req, res, next) => {
     });
 })
 
-app.get('/', (req, res, next) => {
+app.post('/', (req, res, next) => {
     const ctx = req.webtaskContext;
     const config = getConfiguration(ctx);
 
