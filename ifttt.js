@@ -13,9 +13,16 @@ const app = express();
 
 // app.use(bodyParser.json());
 
-app.post('/new_url', (req, res, next) => {
-    const ctx = req.webtaskContext;
-    const config = getConfiguration(ctx);
+function prefetchConfig(cb) {
+    return (req, res, next) => {
+        const ctx = req.webtaskContext;
+        const config = getConfiguration(ctx);
+
+        return cb(ctx, config, req, res, next);
+    };
+}
+
+app.post('/new_url', prefetchConfig((config, ctx, req, res, next) =>  {
     const noteText = ctx.body.noteText;
 
     // parse data.noteText into key and url
@@ -28,77 +35,78 @@ app.post('/new_url', (req, res, next) => {
         url = url.join('=');
     }
 
-    ctx.storage.get((err, data) => {
-        if (err) return next(err);
+    getUrlsAsync(ctx)
+        .then(urls => {
+            urls[key] = url;
+            return setUrlsAsync(ctx, urls);
+        })
+        .then(() => res.status(201).send({key: key, url: url}))
+        .catch(err => res.status(500).send(err));
+}));
 
-        if (!data) data = { };
-        if (!data.urls) data.urls = { };
-
-        data.urls[key] = url;
-
-        ctx.storage.set(data, err => {
-            if (err) return next(err);
-
-            res.status(201).send({key:key, url:url});
-        });
-    });
-})
-
-app.post('/', (req, res, next) => {
-    const ctx = req.webtaskContext;
-    const config = getConfiguration(ctx);
-
-    ctx.storage.get((err, data) => {
-        if (err) return next(err);
-
-        const { urls } = data;
-        if (!urls)
-            res.status(200).send({});
-
-        Promise.all(_.map(urls, (url, key) => {
-            return new Promise((resolve, reject) => {
-                fetchAnalytics(config, key, url, (err, clickCount) => {
-                    if (err) return reject(err);
-
-                    const obj = { key: key, url: url, clicks: clickCount };
-                    if (clickCount > 0) {
-                        iftttNote(config, key, url, clickCount, err => {
-                            if (err) reject(err);
-                            console.log(obj);
-                            resolve(obj);
-                        });
-                    } else resolve();
-                });
-            });
-        })).then(clicks => {
-            console.log(clicks);
-            res.status(200).send(_.reduce(clicks, (acc, item) => {
-                if (item)
-                    acc[item.key] = item;
+app.post('/', prefetchConfig((ctx, config, req, res, next) => {
+    getUrlsAsync(ctx)
+        .then(urls => Promise.all(_.map(urls, (url, key) => fetchAnalyticsAsync(config, url, key))))
+        .then(analytics =>
+            Promise.all(
+                _.filter(analytics, o => o && o.clicks > 0)
+                    .map(o => iftttNoteAsync(config, o.key, o.url, o.clicks))))
+        .then(clicks =>
+            res.status(200).send(_.reduce(clicks, (acc, value) => {
+                if (value)
+                    acc[value.key] = value;
                 return acc;
-            }, {}));
-        }).catch(reason => {
-            console.log(reason);
-            res.status(500).send(reason);
+            }, {})))
+        .catch(err => res.status(500).send(err));
+}));
+
+function getUrlsAsync(ctx) {
+    return new Promise((resolve, reject) => {
+        ctx.storage.get((err, data) => {
+            if (err) return reject(err);
+
+            const { urls } = data;
+            if (!urls) resolve({});
+            else resolve(urls);
         });
     });
-});
-
-function iftttNote(config, shortUrlName, shortUrl, clickCount, cb) {
-    const url = config.ifttt_url;
-    // {{value1}} ({{value2}}) was clicked {{value3}} times!
-    const data = { value1: shortUrlName, value2: shortUrl, value3: clickCount };
-
-    request.post({url: url, json: data}, e => { cb(e); });
 }
 
-function fetchAnalytics(config, key, url, cb) {
-    const query = {shortUrl: url, projection: 'ANALYTICS_CLICKS'}
-    console.log(query)
-    config.urlshortener.url.get(query, (err, resp) => {
-        if (err) return cb(err);
-        console.log(resp);
-        cb(null, resp.analytics.twoHours.shortUrlClicks || 0);
+function setUrlsAsync(ctx, urls) {
+    var data = {};
+    data.urls = urls;
+
+    return new Promise((resolve, reject) => {
+        ctx.storage.set(data, err => {
+            if (err) reject(err);
+            resolve();
+        });
+    });
+}
+
+function iftttNoteAsync(config, shortUrlName, shortUrl, clickCount) {
+    const url = config.ifttt_url;
+    const data = { value1: shortUrlName, value2: shortUrl, value3: clickCount };
+    return new Promise((resolve, reject) => {
+        request.post({url: url, json: data}, e => {
+            if (e)
+                reject(e);
+            resolve( {key: shortUrlName, url: shortUrl, clicks: clickCount});
+        });
+    });
+}
+
+function fetchAnalyticsAsync(config, url, key) {
+    const query = {shortUrl: url, projection: 'ANALYTICS_CLICKS'};
+
+    return new Promise((resolve, reject) => {
+        config.urlshortener.url.get(query, (err, resp) => {
+            if (err) return reject(err);
+            console.log(resp);
+            const obj = {url: url, key: key, clicks: resp.analytics.twoHours.shortUrlClicks || 0}
+            console.log(obj);
+            resolve(obj);
+        });
     });
 }
 
