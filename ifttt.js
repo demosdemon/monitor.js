@@ -89,7 +89,7 @@ function iftttNote(config, shortUrlName, shortUrl, clickCount, cb) {
 }
 
 function fetchAnalytics(config, key, url, cb) {
-    const query = {shortUrl: url, projection: 'FULL'}
+    const query = {shortUrl: url, projection: 'ANALYTICS_CLICKS'}
     console.log(query)
     config.urlshortener.url.get(query, (err, resp) => {
         if (err) return cb(err);
