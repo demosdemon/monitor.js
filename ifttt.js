@@ -55,25 +55,28 @@ app.get('/', (req, res, next) => {
         if (!urls)
             res.status(200).send({});
 
-        var clicks = { };
-
-        Promise.all(_.forEach(urls, (key, url) => {
+        Promise.all(_.forEach(urls, (url, key) => {
             return new Promise((resolve, reject) => {
                 fetchAnalytics(config, key, url, (err, clickCount) => {
-                    if (err) return reject(next(err));
+                    if (err) return reject(err);
 
+                    const obj = { key: key, url: url, clicks: clickCount };
                     if (clickCount > 0) {
-                        clicks[key] = { url: url, clicks: clickCount };
                         iftttNote(config, key, url, clickCount, err => {
-                            if (err) reject(next(err));
-                            resolve();
+                            if (err) reject(err);
+                            resolve(obj);
                         });
                     } else resolve();
                 });
             });
-        }));
-
-        res.status(200).send(clicks);
+        })).then(clicks => {
+            res.status(200).send(_.reduce(clicks, (acc, item) => {
+                if (item)
+                    acc[item.key] = item;
+            }));
+        }).catch(reason => {
+            res.status(500).send(reason);
+        });
     });
 });
 
@@ -86,10 +89,12 @@ function iftttNote(config, shortUrlName, shortUrl, clickCount, cb) {
 }
 
 function fetchAnalytics(config, key, url, cb) {
-    config.urlshortener.url.get({shortUrl: url, projection: 'ANALYTICS_CLICKS'},
-    (err, resp) => {
+    const query = {shortUrl: url, projection: 'FULL'}
+    console.log(query)
+    config.urlshortener.url.get(query, (err, resp) => {
         if (err) return cb(err);
-        cb(null, resp.analytics.twoHours.clicks || 0);
+        console.log(resp);
+        cb(null, resp.analytics.twoHours.shortUrlClicks || 0);
     });
 }
 
