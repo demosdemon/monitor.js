@@ -38,9 +38,9 @@ app.post('/new_url', prefetchConfig((ctx, config, req, res, next) =>  {
     getUrlsAsync(ctx)
         .then(urls => {
             urls[key] = url;
-            setUrlsAsync(ctx, urls)
-                .then(() => res.status(201).send({key: key, url: url}));
+            return setUrlsAsync(ctx, urls);
         })
+        .then(urls => res.status(201).send({key: key, url: urls[key]}))
         .catch(err => res.status(500).send(err));
 }));
 
@@ -79,7 +79,7 @@ function setUrlsAsync(ctx, urls) {
     return new Promise((resolve, reject) => {
         ctx.storage.set(data, err => {
             if (err) reject(err);
-            resolve();
+            resolve(data.urls);
         });
     });
 }
