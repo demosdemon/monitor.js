@@ -18,7 +18,7 @@ GOOGLE_API_KEY=
 
 The deploy file expects a `manifest.json` which defines the tokens to publish to webtask.io
 
-```json
+```javascript
 [
     {
         "filename": "ifttt.js", // filename or url property is required
