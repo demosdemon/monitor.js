@@ -38,9 +38,9 @@ app.post('/new_url', prefetchConfig((ctx, config, req, res, next) =>  {
     getUrlsAsync(ctx)
         .then(urls => {
             urls[key] = url;
-            return setUrlsAsync(ctx, urls);
+            setUrlsAsync(ctx, urls)
+                .then(() => res.status(201).send({key: key, url: url}));
         })
-        .then(() => res.status(201).send({key: key, url: url}))
         .catch(err => res.status(500).send(err));
 }));
 
