@@ -22,7 +22,7 @@ function prefetchConfig(cb) {
     };
 }
 
-app.post('/new_url', prefetchConfig((config, ctx, req, res, next) =>  {
+app.post('/new_url', prefetchConfig((ctx, config, req, res, next) =>  {
     const noteText = ctx.body.noteText;
 
     // parse data.noteText into key and url
